@@ -7,7 +7,11 @@
 #include <iostream>
 
 struct test_packet {
-    int x;
+    short size;
+    short type;
+    short dir;
+    short x;
+    short y;
 };
 
 int main()
@@ -20,7 +24,8 @@ int main()
     if (ret != 0) return 1;
 
     SOCKET server_socket = ::socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-    SOCKET client_socket;
+    SOCKET client_socket; // just consider 2 clients
+    SOCKET client_socket2;
     SOCKADDR_IN server_addr, client_addr;
     
     setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
@@ -38,14 +43,22 @@ int main()
 
     int client_addr_len = sizeof(client_addr);
     client_socket = ::accept(server_socket, (PSOCKADDR)&client_addr, &client_addr_len);
+    client_socket2 = ::accept(server_socket, (PSOCKADDR)&client_addr, &client_addr_len);
+
     std::cerr << WSAGetLastError() << std::endl;
 
+    test_packet packet;
+    packet.size = sizeof(packet);
+    packet.type = 0;
+    packet.x = 300;
+    packet.y = 300;
+
     while (true) {
-        test_packet packet;
         int comm;
         std::cerr << "Input command : ";
-        std::cin >> packet.x;
+        std::cin >> packet.dir;
         send(client_socket, (const char*)&packet, sizeof(packet), 0);
+        send(client_socket2, (const char*)&packet, sizeof(packet), 0);
     }
 
     closesocket(client_socket);
