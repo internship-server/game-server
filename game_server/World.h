@@ -1,26 +1,32 @@
 #pragma once
 #include <vector>
+#include <random>
+
+#define MIN_MAP_WIDTH 16
+#define MIN_MAP_HEIGHT 32
+
+struct Position
+{
+	float x;
+	float y;
+};
 
 struct Object
 {
-	struct pos
-	{
-		float x;
-		float y;
-	};
+	Position pos;
 };
 
-struct Player : Object
+struct Player : public Object
 {};
 
-struct Obstacle : Object
+struct Obstacle : public Object
 {};
 
 enum Direction : unsigned short
 {
 	UP, DOWN, LEFT, RIGHT
 };
-struct Enemy : Object
+struct Enemy : public Object
 {
 	Direction direction_;
 	unsigned short velocity_;
@@ -28,7 +34,15 @@ struct Enemy : Object
 
 class World
 {
+public:
+	World() { random_.seed(std::mt19937::default_seed); };
+	~World() {};
+	void Init();
+	void SetMapSize(unsigned short width, unsigned short height);
+
 private:
-	Player player;
-	std::vector<Object> objects;
+	Position boundary_;
+	Player player_;
+	std::vector<Object> objects_;
+	std::mt19937 random_;
 };
