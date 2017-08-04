@@ -58,7 +58,7 @@ struct SnapshotPacketHeader
 class World
 {
 public:
-	World() { random_.seed(time(NULL)); };
+	World() { snapshot_storage_size = 1; random_.seed(time(NULL)); };
 	~World() {};
 	void Init();
 	void SetMapSize(unsigned short width, unsigned short height);
