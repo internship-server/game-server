@@ -5,6 +5,11 @@
 #define MIN_MAP_WIDTH 16
 #define MIN_MAP_HEIGHT 32
 
+enum class Command : unsigned short
+{
+	NONE, UP, DOWN, LEFT, RIGHT
+};
+
 struct Position
 {
 	float x;
@@ -22,9 +27,9 @@ struct Player : public Object
 struct Obstacle : public Object
 {};
 
-enum Direction : unsigned short
+enum class Direction : unsigned short
 {
-	UP, DOWN, LEFT, RIGHT
+	LEFT, RIGHT
 };
 struct Enemy : public Object
 {
