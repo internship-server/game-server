@@ -19,10 +19,16 @@ struct Position
 struct Object
 {
 	Position pos;
+	friend bool operator==(const Object& l, const Object& r)
+	{
+		return l.pos.x == r.pos.x && l.pos.y == r.pos.y;
+	}
 };
 
 struct Player : public Object
-{};
+{
+	bool is_dead_;
+};
 
 struct Obstacle : public Object
 {};
@@ -44,10 +50,21 @@ public:
 	~World() {};
 	void Init();
 	void SetMapSize(unsigned short width, unsigned short height);
+	
+	void ProcessCommand(Command command);
 
 private:
+	bool is_cleared_;
 	Position boundary_;
 	Player player_;
-	std::vector<Object> objects_;
+	std::vector<Enemy> enemies_;
+	std::vector<Obstacle> obstacles_;
 	std::mt19937 random_;
+
+	void ProcessEnemies();
+	void DetectCollision();
+	bool DetectClear();
+	bool DetectCollisionWithBoundary();
+	bool DetectCollisionWithObstacle();
+	bool DetectCollisionWithEnemy();
 };
