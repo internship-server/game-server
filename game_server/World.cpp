@@ -73,6 +73,37 @@ void World::SpawnEnemy()
 	}
 }
 
+void World::SetSnapshotStorageSize(unsigned int size)
+{
+	snapshot_storage_size = size;
+}
+
+void World::MakeSnapshot()
+{
+	unsigned int player_area_size, enemies_area_size, obstacles_area_size;
+	player_area_size = sizeof(Player);
+	enemies_area_size = sizeof(Enemy) * enemies_.size();
+	obstacles_area_size = sizeof(Obstacle) * obstacles_.size();
+	unsigned int total_size = player_area_size + enemies_area_size + obstacles_area_size;
+	std::cout << "Total size is " << total_size << "\n";
+	std::shared_ptr<char> new_snapshot(new char[total_size]);
+	memset(new_snapshot.get(), 0, total_size);
+	memcpy(new_snapshot.get(), &player_, sizeof(Player));
+	memcpy(new_snapshot.get() + player_area_size, enemies_.data(), enemies_area_size);
+	memcpy(new_snapshot.get() + player_area_size + enemies_area_size, obstacles_.data(), obstacles_area_size);
+
+	snapshots_.push_front(new_snapshot);
+	if (snapshots_.size() > snapshot_storage_size)
+		snapshots_.pop_back();
+}
+
+auto World::GetSnapshot(unsigned int last)
+{
+	if (last >= snapshots_.size())
+		throw "Invalid Snapshot Index.";
+	return snapshots_[last];
+}
+
 void World::ProcessEnemies()
 {
 	for (auto enemy = enemies_.begin(); enemy != enemies_.end();) {

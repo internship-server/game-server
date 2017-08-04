@@ -2,6 +2,8 @@
 #include <vector>
 #include <random>
 #include <time.h>
+#include <deque>
+#include <memory>
 
 #define MIN_MAP_WIDTH 16
 #define MIN_MAP_HEIGHT 16
@@ -11,13 +13,11 @@ enum class Command : unsigned short
 {
 	NONE, UP, DOWN, LEFT, RIGHT
 };
-
 struct Position
 {
 	float x;
 	float y;
 };
-
 struct Object
 {
 	Position pos;
@@ -26,15 +26,12 @@ struct Object
 		return l.pos.x == r.pos.x && l.pos.y == r.pos.y;
 	}
 };
-
 struct Player : public Object
 {
 	bool is_dead_;
 };
-
 struct Obstacle : public Object
 {};
-
 enum class Direction : unsigned short
 {
 	LEFT, RIGHT
@@ -44,7 +41,20 @@ struct Enemy : public Object
 	Direction direction_;
 	unsigned short velocity_;
 };
+enum PacketType : unsigned short
+{
+	// To Do: 지수와 상의할 것
+	SNAPSHOT
+};
+struct SnapshotPacketHeader
+{
+	unsigned short size_;
+	PacketType type_;
+	bool is_end_;
+	unsigned short enemy_number_;
+	unsigned short obstacle_number_;
 
+};
 class World
 {
 public:
@@ -57,6 +67,9 @@ public:
 	bool IsEnd() { return is_end_; }
 	bool IsClear() { return is_end_ & !player_.is_dead_; }
 	void SpawnEnemy();
+	void SetSnapshotStorageSize(unsigned int size);
+	void MakeSnapshot();
+	auto GetSnapshot(unsigned int last);
 
 private:
 	bool is_end_;
@@ -65,6 +78,8 @@ private:
 	std::vector<Enemy> enemies_;
 	std::vector<Obstacle> obstacles_;
 	std::mt19937 random_;
+	unsigned int snapshot_storage_size;
+	std::deque<std::shared_ptr<char>> snapshots_;
 
 	void ProcessEnemies();
 	void DetectCollision();
