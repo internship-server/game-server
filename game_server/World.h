@@ -52,6 +52,7 @@ public:
 	void SetMapSize(unsigned short width, unsigned short height);
 	
 	void ProcessCommand(Command command);
+	bool IsClear() { return is_cleared_; }
 
 private:
 	bool is_cleared_;
