@@ -3,7 +3,8 @@
 
 void World::Init()
 {
-	is_cleared_ = false;
+	std::cout << std::boolalpha;
+	is_end_ = false;
 	player_.is_dead_ = false;
 	player_.pos.x = random_() % static_cast<unsigned int>(boundary_.x);
 	player_.pos.y = 0;
@@ -42,26 +43,51 @@ void World::ProcessCommand(Command command)
 		throw "Unknown Command.";
 	}
 	if (DetectClear()) {
-		is_cleared_ = true;
+		std::cout << "Clear!\n";
+		is_end_ = true;
 	}
 	else {
 		if (DetectCollisionWithObstacle() || DetectCollisionWithBoundary())
 			player_.pos = before_position;
 		if (DetectCollisionWithEnemy())
-			player_.is_dead_ = true;
+			player_.is_dead_ = is_end_ = true;
 	}
-	std::cout << "Alive: " << !player_.is_dead_ << "Position: (" << player_.pos.x << ", " << player_.pos.y << ")\n";
+	std::cout << "Alive: " << !player_.is_dead_ << "\tPosition: (" << player_.pos.x << ", " << player_.pos.y << ")\n";
+	std::cout << "Enemies: ";
+	for (Enemy &enemy : enemies_) {
+		std::cout << "(" << enemy.pos.x << ", " << enemy.pos.y << "), ";
+	}	std::cout << std::endl;
+}
+
+void World::SpawnEnemy()
+{
+	if (!(random_() % 2)) {
+		std::cout << "Enemy Spawned!\n";
+		Enemy new_enemy;
+		new_enemy.velocity_ = random_() % (MAX_ENEMY_VELOCITY - 1);
+		++new_enemy.velocity_;
+		new_enemy.direction_ = static_cast<Direction>(random_() % 2);
+		new_enemy.pos.x = new_enemy.direction_ == Direction::RIGHT ? 0 : boundary_.x;
+		new_enemy.pos.y = random_() % static_cast<unsigned int>(boundary_.y);
+		enemies_.push_back(new_enemy);
+	}
 }
 
 void World::ProcessEnemies()
 {
-	for (Enemy &enemy : enemies_) {
-		if (enemy.direction_ == Direction::LEFT)
-			enemy.pos.x -= enemy.velocity_;
-		else if (enemy.direction_ == Direction::RIGHT)
-			enemy.pos.x += enemy.velocity_;
+	for (auto enemy = enemies_.begin(); enemy != enemies_.end();) {
+		if (enemy->direction_ == Direction::LEFT)
+			enemy->pos.x -= enemy->velocity_;
+		else if (enemy->direction_ == Direction::RIGHT)
+			enemy->pos.x += enemy->velocity_;
 		else
 			throw "Unknown Direction.";
+
+		if ((enemy->direction_ == Direction::LEFT && enemy->pos.x <= 0) ||
+			(enemy->direction_ == Direction::RIGHT && enemy->pos.x >= boundary_.x))
+			enemy = enemies_.erase(enemy);
+		else
+			++enemy;
 	}
 }
 

@@ -1,9 +1,11 @@
 #pragma once
 #include <vector>
 #include <random>
+#include <time.h>
 
 #define MIN_MAP_WIDTH 16
-#define MIN_MAP_HEIGHT 32
+#define MIN_MAP_HEIGHT 16
+#define MAX_ENEMY_VELOCITY 3
 
 enum class Command : unsigned short
 {
@@ -46,16 +48,18 @@ struct Enemy : public Object
 class World
 {
 public:
-	World() { random_.seed(std::mt19937::default_seed); };
+	World() { random_.seed(time(NULL)); };
 	~World() {};
 	void Init();
 	void SetMapSize(unsigned short width, unsigned short height);
 	
 	void ProcessCommand(Command command);
-	bool IsClear() { return is_cleared_; }
+	bool IsEnd() { return is_end_; }
+	bool IsClear() { return is_end_ & !player_.is_dead_; }
+	void SpawnEnemy();
 
 private:
-	bool is_cleared_;
+	bool is_end_;
 	Position boundary_;
 	Player player_;
 	std::vector<Enemy> enemies_;
