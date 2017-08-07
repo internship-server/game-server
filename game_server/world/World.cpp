@@ -84,19 +84,27 @@ void World::SetSnapshotStorageSize(unsigned int size)
 
 void World::MakeSnapshot()
 {
+	Snapshot snapshot;
+	SnapshotHeader &header = snapshot.header_;
+	header.is_end_ = is_end_;
+	header.enemy_number_ = enemies_.size();
+	header.obstacle_number_ = obstacles_.size();
+	
 	unsigned int player_area_size, enemies_area_size, obstacles_area_size;
 	player_area_size = sizeof(Player);
-	enemies_area_size = sizeof(Enemy) * enemies_.size();
-	obstacles_area_size = sizeof(Obstacle) * obstacles_.size();
+	enemies_area_size = sizeof(Enemy) * header.enemy_number_;
+	obstacles_area_size = sizeof(Obstacle) * header.obstacle_number_;
 	unsigned int total_size = player_area_size + enemies_area_size + obstacles_area_size;
+	header.total_size_ = total_size;
 	std::cout << "Total size is " << total_size << "\n";
-	std::shared_ptr<char> new_snapshot(new char[total_size]);
-	memset(new_snapshot.get(), 0, total_size);
-	memcpy(new_snapshot.get(), &player_, sizeof(Player));
-	memcpy(new_snapshot.get() + player_area_size, enemies_.data(), enemies_area_size);
-	memcpy(new_snapshot.get() + player_area_size + enemies_area_size, obstacles_.data(), obstacles_area_size);
+	snapshot.data_ = std::make_shared<std::vector<char>>(total_size);
+	auto snapshot_data = snapshot.data_.get()->data();
+	memset(snapshot_data, 0, total_size);
+	memcpy(snapshot_data, &player_, sizeof(Player));
+	memcpy(snapshot_data + player_area_size, enemies_.data(), enemies_area_size);
+	memcpy(snapshot_data + player_area_size + enemies_area_size, obstacles_.data(), obstacles_area_size);
 
-	snapshots_.push_front(new_snapshot);
+	snapshots_.push_front(snapshot);
 	if (snapshots_.size() > snapshot_storage_size)
 		snapshots_.pop_back();
 }
