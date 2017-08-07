@@ -1,6 +1,7 @@
 //
 // main.cpp
 //
+
 #include <chrono>
 #include <thread>
 #include <vector>
@@ -8,7 +9,7 @@
 #include "World.h"
 #include "udp_server/src/server.hpp"
 
-using namespace std::chrono_literals;
+#define FRAME_INTERVAL 16
 
 std::mutex mtx_sessions;
 std::vector<core::udp::Session*> sessions;
@@ -24,7 +25,7 @@ void accpet_handler(core::udp::Session* session)
     mtx_sessions.unlock();
 }
 
-void broad_cast()
+void broad_cast(const char*)
 {
     mtx_sessions.lock();
     for (core::udp::Session* session : sessions) {
@@ -35,11 +36,24 @@ void broad_cast()
 
 void broad_cast_task()
 {
+    std::chrono::high_resolution_clock::time_point last;
+    std::chrono::high_resolution_clock::time_point curr;
+
+    last = std::chrono::high_resolution_clock::now();
+
     while (true) {
         unsigned int command = rand() % 5;
+        
+        last = std::chrono::high_resolution_clock::now();
         world.SpawnEnemy();
         world.ProcessCommand(static_cast<Command>(command));
         world.MakeSnapshot();
+        const char* snapshot = *world.GetSnapshot(0);
+        broad_cast(snapshot);
+        curr = std::chrono::high_resolution_clock::now();
+        
+        int dt = ((std::chrono::duration<double, std::milli>)(curr - last)).count();
+        Sleep(FRAME_INTERVAL - dt > 0 ? FRAME_INTERVAL - dt : 0);
     }
 }
 int main()
