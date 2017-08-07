@@ -1,0 +1,3 @@
+[submodule "server-core"]
+	path = server-core
+	url = C:\\workspace\\code\\game-server\\game_server\\server-core
