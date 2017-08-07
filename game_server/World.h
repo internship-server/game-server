@@ -47,14 +47,17 @@ enum PacketType : unsigned short
 	// To Do: 지수와 상의할 것
 	SNAPSHOT
 };
-struct SnapshotPacketHeader
+struct SnapshotHeader
 {
-	unsigned short size_;
-	PacketType type_;
+	unsigned short total_size_;
 	bool is_end_;
 	unsigned short enemy_number_;
 	unsigned short obstacle_number_;
-
+};
+struct Snapshot
+{
+	SnapshotHeader header_;
+	std::shared_ptr<std::vector<char>> data_;
 };
 class World
 {
@@ -81,7 +84,7 @@ private:
 	std::vector<Obstacle> obstacles_;
 	std::mt19937 random_;
 	unsigned int snapshot_storage_size;
-	std::deque<std::shared_ptr<char>> snapshots_;
+	std::deque<Snapshot> snapshots_;
 
 	void ProcessEnemies();
 	void DetectCollision();
