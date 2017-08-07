@@ -109,7 +109,7 @@ void World::MakeSnapshot()
 		snapshots_.pop_back();
 }
 
-auto World::GetSnapshot(unsigned int last)
+Snapshot& World::GetSnapshot(unsigned int last)
 {
 	if (last >= snapshots_.size())
 		throw "Invalid Snapshot Index.";

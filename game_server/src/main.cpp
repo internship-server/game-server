@@ -9,6 +9,9 @@
 #include "World.h"
 #include "udp_server/src/server.hpp"
 
+#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "udp_server.lib")
+
 #define FRAME_INTERVAL 16
 
 std::mutex mtx_sessions;
@@ -25,12 +28,23 @@ void accpet_handler(core::udp::Session* session)
     mtx_sessions.unlock();
 }
 
-void broad_cast(const char*)
+void broad_cast(Snapshot& snapshot)
 {
     mtx_sessions.lock();
+    // bool + ushort * 2 == 5
+    core::udp::Packet p(snapshot.header_.total_size_, 0);
+
+    char* packet = const_cast<char*>(p.Data());
+
+    memcpy(packet, (char*)&snapshot + 2, 1);
+    memcpy(packet + 1, (char*)&snapshot + 3, 2);
+    memcpy(packet + 3, (char*)&snapshot + 5, 2);
+    memcpy(packet + 5, snapshot.data_->data(), snapshot.header_.total_size_);
+
     for (core::udp::Session* session : sessions) {
-        // Send
+        session->Send(p);
     }
+
     mtx_sessions.unlock();
 }
 
@@ -48,8 +62,7 @@ void broad_cast_task()
         world.SpawnEnemy();
         world.ProcessCommand(static_cast<Command>(command));
         world.MakeSnapshot();
-        const char* snapshot = *world.GetSnapshot(0);
-        broad_cast(snapshot);
+        broad_cast(world.GetSnapshot(0));
         curr = std::chrono::high_resolution_clock::now();
         
         int dt = ((std::chrono::duration<double, std::milli>)(curr - last)).count();
@@ -58,9 +71,17 @@ void broad_cast_task()
 }
 int main()
 {
+    core::udp::Server server(4000, 1);
+
     world.SetMapSize(64, 16);
     world.SetSnapshotStorageSize(16);
     world.Init();
+
+    server.SetAcceptHandler(&accpet_handler);
+    server.SetPacketHandler(&packet_handler);
+
+    server.RunNonBlock();
+
     std::thread broad_cast_thread([]() { broad_cast_task(); });
 
     // Communicate with chat server

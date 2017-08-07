@@ -73,7 +73,7 @@ public:
 	void SpawnEnemy();
 	void SetSnapshotStorageSize(unsigned int size);
 	void MakeSnapshot();
-	auto GetSnapshot(unsigned int last);
+    Snapshot& GetSnapshot(unsigned int last);
 
 private:
 	bool is_end_;
