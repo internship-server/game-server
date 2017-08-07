@@ -20,6 +20,7 @@ struct Position
 };
 struct Object
 {
+	unsigned short object_id_;
 	Position pos;
 	friend bool operator==(const Object& l, const Object& r)
 	{
@@ -73,6 +74,7 @@ public:
 
 private:
 	bool is_end_;
+	unsigned short current_object_id_;
 	Position boundary_;
 	Player player_;
 	std::vector<Enemy> enemies_;

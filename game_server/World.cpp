@@ -4,7 +4,9 @@
 void World::Init()
 {
 	std::cout << std::boolalpha;
+	current_object_id_ = 0;
 	is_end_ = false;
+	player_.object_id_ = 0;
 	player_.is_dead_ = false;
 	player_.pos.x = random_() % static_cast<unsigned int>(boundary_.x);
 	player_.pos.y = 0;
@@ -63,7 +65,9 @@ void World::SpawnEnemy()
 {
 	if (!(random_() % 2)) {
 		std::cout << "Enemy Spawned!\n";
+		++current_object_id_;
 		Enemy new_enemy;
+		new_enemy.object_id_ = current_object_id_;
 		new_enemy.velocity_ = random_() % (MAX_ENEMY_VELOCITY - 1);
 		++new_enemy.velocity_;
 		new_enemy.direction_ = static_cast<Direction>(random_() % 2);
@@ -140,20 +144,16 @@ bool World::DetectCollisionWithBoundary()
 
 bool World::DetectCollisionWithObstacle()
 {
-	for (Obstacle &obstacle : obstacles_) {
-		if (player_ == obstacle) {
+	for (Obstacle &obstacle : obstacles_)
+		if (player_ == obstacle)
 			return true;
-		}
-	}
 	return false;
 }
 
 bool World::DetectCollisionWithEnemy()
 {
-	for (Enemy &enemy : enemies_) {
-		if (player_ == enemy) {
+	for (Enemy &enemy : enemies_)
+		if (player_ == enemy)
 			return true;
-		}
-	}
 	return false;
 }
