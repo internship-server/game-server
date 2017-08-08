@@ -3,7 +3,8 @@
 
 void World::Init()
 {
-	current_object_id_ = 0;
+	for (int i = 0; i <= MAX_ENEMY_COUNT; ++i)
+		enemy_id_queue_.push(i);
 	is_end_ = false;
 	player_.object_id_ = 0;
 	player_.is_dead_ = false;
@@ -67,6 +68,8 @@ void World::SpawnEnemy()
 			new_enemy.direction_ = static_cast<Direction>(random_() % 2);
 			new_enemy.pos.x = new_enemy.direction_ == Direction::RIGHT ? 0 : boundary_.x;
 			new_enemy.pos.y = random_() % static_cast<unsigned int>(boundary_.y);
+			new_enemy.object_id_ = enemy_id_queue_.front();
+			enemy_id_queue_.pop();
 			enemies_.push_back(new_enemy);
 		}
 	}
@@ -74,7 +77,7 @@ void World::SpawnEnemy()
 
 void World::SetSnapshotStorageSize(unsigned int size)
 {
-	snapshot_storage_size = size;
+	snapshot_storage_size_ = size;
 }
 
 void World::MakeSnapshot()
@@ -99,7 +102,7 @@ void World::MakeSnapshot()
 	memcpy(snapshot_data + player_area_size + enemies_area_size, obstacles_.data(), obstacles_area_size);
 
 	snapshots_.push_front(snapshot);
-	if (snapshots_.size() > snapshot_storage_size)
+	if (snapshots_.size() > snapshot_storage_size_)
 		snapshots_.pop_back();
 }
 

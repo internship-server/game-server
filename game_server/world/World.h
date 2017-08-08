@@ -3,6 +3,7 @@
 #include <random>
 #include <time.h>
 #include <deque>
+#include <queue>
 #include <memory>
 
 #define MIN_MAP_WIDTH 16
@@ -80,14 +81,14 @@ public:
 
 private:
 	bool is_end_;
-	unsigned short current_object_id_;
 	Position boundary_;
 	Player player_;
 	std::vector<Enemy> enemies_;
 	std::vector<Obstacle> obstacles_;
 	std::mt19937 random_;
-	unsigned int snapshot_storage_size;
+	unsigned int snapshot_storage_size_;
 	std::deque<Snapshot> snapshots_;
+	std::queue<unsigned short> enemy_id_queue_;
 
 	void ProcessEnemies();
 	void DetectCollision();
