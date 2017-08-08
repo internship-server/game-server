@@ -6,10 +6,11 @@
 #include <queue>
 #include <memory>
 
-#define MIN_MAP_WIDTH 16
-#define MIN_MAP_HEIGHT 16
+#define MIN_MAP_WIDTH 8
+#define MIN_MAP_HEIGHT 8
 #define MAX_ENEMY_VELOCITY 3
-#define MAX_ENEMY_COUNT 1000
+#define MAX_ENEMY_COUNT 300
+#define EXPECTED_ERROR 0.05
 
 #pragma pack(push, 1)
 enum class Command : unsigned short
@@ -27,7 +28,8 @@ struct Object
 	Position pos;
 	friend bool operator==(const Object& l, const Object& r)
 	{
-		return l.pos.x == r.pos.x && l.pos.y == r.pos.y;
+		return (l.pos.x - EXPECTED_ERROR <= r.pos.x  && r.pos.x <= l.pos.x + EXPECTED_ERROR) && 
+			(l.pos.y - EXPECTED_ERROR <= r.pos.y && r.pos.y <= l.pos.y + EXPECTED_ERROR);
 	}
 };
 struct Player : public Object
@@ -66,21 +68,24 @@ struct Snapshot
 class World
 {
 public:
-	World() { snapshot_storage_size = 1; random_.seed(time(NULL)); };
+	World() : ips_(1), snapshot_storage_size_(1){ random_.seed(time(NULL)); };
 	~World() {};
 	void Init();
 	void SetMapSize(unsigned short width, unsigned short height);
-	
+	void SetIps(unsigned short interval);
+	void SetSnapshotStorageSize(unsigned int size);
+
 	void ProcessCommand(Command command);
 	bool IsEnd() { return is_end_; }
 	bool IsClear() { return is_end_ & !player_.is_dead_; }
 	void SpawnEnemy();
-	void SetSnapshotStorageSize(unsigned int size);
 	void MakeSnapshot();
     Snapshot& GetSnapshot(unsigned int last);
+	void Print();
 
 private:
 	bool is_end_;
+	unsigned short ips_;
 	Position boundary_;
 	Player player_;
 	std::vector<Enemy> enemies_;

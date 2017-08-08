@@ -22,6 +22,11 @@ void World::SetMapSize(unsigned short width, unsigned short height)
 	boundary_.y = height;
 }
 
+void World::SetIps(unsigned short ips)
+{
+	ips_ = ips;
+}
+
 void World::ProcessCommand(Command command)
 {
 	ProcessEnemies();
@@ -30,16 +35,16 @@ void World::ProcessCommand(Command command)
 	case Command::NONE:
 		break;
 	case Command::UP:
-		++player_.pos.y;
+		player_.pos.y += 1 / (float)ips_;
 		break;
 	case Command::DOWN:
-		--player_.pos.y;
+		player_.pos.y -= 1 / (float)ips_;
 		break;
 	case Command::LEFT:
-		--player_.pos.x;
+		player_.pos.x -= 1 / ips_;
 		break;
 	case Command::RIGHT:
-		++player_.pos.x;
+		player_.pos.x += 1 / ips_;
 		break;
 	default:
 		throw "Unknown Command.";
@@ -113,21 +118,33 @@ Snapshot& World::GetSnapshot(unsigned int last)
 	return snapshots_[last];
 }
 
+void World::Print()
+{
+	std::cout << "Alive: " << !player_.is_dead_ << "\tPosition: (" << player_.pos.x << ", " << player_.pos.y << ")\n";
+	std::cout << "Enemies: ";
+	for (Enemy &enemy : enemies_) {
+		std::cout << "(" << enemy.pos.x << ", " << enemy.pos.y << "), ";
+	}    std::cout << std::endl;
+}
+
 void World::ProcessEnemies()
 {
 	for (auto enemy = enemies_.begin(); enemy != enemies_.end();) {
 		if (enemy->direction_ == Direction::LEFT)
-			enemy->pos.x -= enemy->velocity_;
+			enemy->pos.x -= (enemy->velocity_ / (float)ips_);
 		else if (enemy->direction_ == Direction::RIGHT)
-			enemy->pos.x += enemy->velocity_;
+			enemy->pos.x += (enemy->velocity_ / (float)ips_);
 		else
 			throw "Unknown Direction.";
 
 		if ((enemy->direction_ == Direction::LEFT && enemy->pos.x <= 0) ||
-			(enemy->direction_ == Direction::RIGHT && enemy->pos.x >= boundary_.x))
+			(enemy->direction_ == Direction::RIGHT && enemy->pos.x >= boundary_.x)) {
+			enemy_id_queue_.push(enemy->object_id_);
 			enemy = enemies_.erase(enemy);
-		else
+		}
+		else {
 			++enemy;
+		}
 	}
 }
 
@@ -139,7 +156,7 @@ void World::DetectCollision()
 
 bool World::DetectClear()
 {
-	return player_.pos.y == boundary_.y;
+	return player_.pos.y - EXPECTED_ERROR <= boundary_.y && boundary_.y <= player_.pos.y + EXPECTED_ERROR;
 }
 
 bool World::DetectCollisionWithBoundary()

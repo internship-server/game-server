@@ -14,6 +14,7 @@
 #pragma comment(lib, "udp_server.lib")
 
 #define FRAME_INTERVAL 16
+#define ips 4
 
 std::mutex mtx_sessions;
 std::vector<core::udp::Session*> sessions;
@@ -68,21 +69,26 @@ void broad_cast_task()
         
         last = std::chrono::high_resolution_clock::now();
         world.SpawnEnemy();
-        world.ProcessCommand(static_cast<Command>(command));
-        world.MakeSnapshot();
-        broad_cast(world.GetSnapshot(0));
+		for (int i = 0; i < ips; ++i) {
+			world.ProcessCommand(static_cast<Command>(command));
+			world.MakeSnapshot();
+			//broad_cast(world.GetSnapshot(0));
+		}
         curr = std::chrono::high_resolution_clock::now();
         
         int dt = ((std::chrono::duration<double, std::milli>)(curr - last)).count();
-        Sleep(FRAME_INTERVAL - dt > 0 ? FRAME_INTERVAL - dt : 0);
+        //Sleep(FRAME_INTERVAL - dt > 0 ? FRAME_INTERVAL - dt : 0);
+		world.Print();
+		Sleep(1000);
     }
 }
 int main()
 {
     core::udp::Server server(4000, 1);
 
-    world.SetMapSize(64, 16);
+    world.SetMapSize(8, 8);
     world.SetSnapshotStorageSize(16);
+	world.SetIps(ips);
     world.Init();
 
     server.SetAcceptHandler(&accpet_handler);

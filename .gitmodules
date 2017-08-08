@@ -3,4 +3,4 @@
 	url = C:\\workspace\\code\\server-core
 [submodule "game_server/server-core"]
 	path = game_server/server-core
-	url = C:\\workspace\\code\\server-core
+url=https://github.com/internship-server/server-core/
