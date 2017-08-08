@@ -3,7 +3,6 @@
 
 void World::Init()
 {
-	std::cout << std::boolalpha;
 	current_object_id_ = 0;
 	is_end_ = false;
 	player_.object_id_ = 0;
@@ -45,7 +44,6 @@ void World::ProcessCommand(Command command)
 		throw "Unknown Command.";
 	}
 	if (DetectClear()) {
-		std::cout << "Clear!\n";
 		is_end_ = true;
 	}
 	else {
@@ -54,17 +52,11 @@ void World::ProcessCommand(Command command)
 		if (DetectCollisionWithEnemy())
 			player_.is_dead_ = is_end_ = true;
 	}
-	std::cout << "Alive: " << !player_.is_dead_ << "\tPosition: (" << player_.pos.x << ", " << player_.pos.y << ")\n";
-	std::cout << "Enemies: ";
-	for (Enemy &enemy : enemies_) {
-		std::cout << "(" << enemy.pos.x << ", " << enemy.pos.y << "), ";
-	}	std::cout << std::endl;
 }
 
 void World::SpawnEnemy()
 {
 	if (!(random_() % 2)) {
-		std::cout << "Enemy Spawned!\n";
 		++current_object_id_;
 		Enemy new_enemy;
 		new_enemy.object_id_ = current_object_id_;
@@ -96,7 +88,6 @@ void World::MakeSnapshot()
 	obstacles_area_size = sizeof(Obstacle) * header.obstacle_number_;
 	unsigned int total_size = player_area_size + enemies_area_size + obstacles_area_size;
 	header.total_size_ = total_size;
-	std::cout << "Total size is " << total_size << "\n";
 	snapshot.data_ = std::make_shared<std::vector<char>>(total_size);
 	auto snapshot_data = snapshot.data_.get()->data();
 	memset(snapshot_data, 0, total_size);

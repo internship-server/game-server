@@ -2,6 +2,7 @@
 // main.cpp
 //
 
+#include <iostream>
 #include <chrono>
 #include <thread>
 #include <vector>
@@ -33,6 +34,13 @@ void broad_cast(Snapshot& snapshot)
     mtx_sessions.lock();
     // bool + ushort * 2 == 5
     core::udp::Packet p(snapshot.header_.total_size_, 0);
+
+    std::cout << "enemy_number_    : " <<
+        snapshot.header_.enemy_number_ << std::endl;
+    std::cout << "obstacle_number_ : " <<
+        snapshot.header_.obstacle_number_ << std::endl;
+    std::cout << "total_size_      : " <<
+        snapshot.header_.total_size_ << std::endl;
 
     char* packet = const_cast<char*>(p.Data());
 
