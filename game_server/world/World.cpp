@@ -64,7 +64,6 @@ void World::SpawnEnemy()
 {
 	if (enemies_.size() < MAX_ENEMY_COUNT) {
 		if (!(random_() % 2)) {
-			std::cout << "Enemy Spawned!\n";
 			Enemy new_enemy;
 			new_enemy.velocity_ = random_() % (MAX_ENEMY_VELOCITY - 1);
 			++new_enemy.velocity_;

@@ -13,12 +13,18 @@
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "udp_server.lib")
 
-#define FRAME_INTERVAL 16
-#define ips 4
+#define IPS 4
+#define INTERVAL 1000/IPS
 
 std::mutex mtx_sessions;
 std::vector<core::udp::Session*> sessions;
 World world;
+
+bool init_wsa()
+{
+    WSAData wsa_data;
+    return WSAStartup(MAKEWORD(2, 2), &wsa_data) == 0;
+}
 
 void packet_handler(core::udp::Session*, core::udp::Packet&) { } // ignore packet
 
@@ -26,6 +32,7 @@ void packet_handler(core::udp::Session*, core::udp::Packet&) { } // ignore packe
 void accpet_handler(core::udp::Session* session)
 {
     mtx_sessions.lock();
+    std::cout << "Client accepted\n";
     sessions.push_back(session);
     mtx_sessions.unlock();
 }
@@ -65,30 +72,33 @@ void broad_cast_task()
     last = std::chrono::high_resolution_clock::now();
 
     while (true) {
-        unsigned int command = rand() % 5;
-        
         last = std::chrono::high_resolution_clock::now();
+        unsigned int command = rand() % 5;
         world.SpawnEnemy();
-		for (int i = 0; i < ips; ++i) {
+		for (int i = 0; i < IPS; ++i) {
 			world.ProcessCommand(static_cast<Command>(command));
 			world.MakeSnapshot();
 			//broad_cast(world.GetSnapshot(0));
 		}
         curr = std::chrono::high_resolution_clock::now();
-        
+        std::cout << "Command : " << command << std::endl;
+        world.Print();
         int dt = ((std::chrono::duration<double, std::milli>)(curr - last)).count();
-        //Sleep(FRAME_INTERVAL - dt > 0 ? FRAME_INTERVAL - dt : 0);
-		world.Print();
-		Sleep(1000);
+        Sleep(1000 - dt);
     }
 }
 int main()
 {
+    if (!init_wsa()) {
+        std::cout << "init_wsa() failed.\n";
+        return 1;
+    }
+
     core::udp::Server server(4000, 1);
 
     world.SetMapSize(8, 8);
     world.SetSnapshotStorageSize(16);
-	world.SetIps(ips);
+	world.SetIps(IPS);
     world.Init();
 
     server.SetAcceptHandler(&accpet_handler);
