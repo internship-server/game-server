@@ -47,7 +47,9 @@ void broad_cast(Snapshot& snapshot)
     memcpy(packet, (char*)&snapshot + 2, 1);
     memcpy(packet + 1, (char*)&snapshot + 3, 2);
     memcpy(packet + 3, (char*)&snapshot + 5, 2);
-    memcpy(packet + 5, snapshot.data_->data(), snapshot.header_.total_size_);
+    memcpy(packet + 5, (char*)&snapshot + 7, 2);
+    memcpy(packet + 7, (char*)&snapshot + 9, 2);
+    memcpy(packet + 9, snapshot.data_->data(), snapshot.header_.total_size_);
 
     for (core::udp::Session* session : sessions) {
         session->Send(p);
