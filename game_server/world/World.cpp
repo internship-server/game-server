@@ -3,6 +3,7 @@
 
 void World::Init()
 {
+	current_score_ = 0;
 	for (int i = 0; i <= MAX_ENEMY_COUNT; ++i)
 		enemy_id_queue_.push(i);
 	is_end_ = false;
@@ -58,6 +59,7 @@ void World::ProcessCommand(Command command)
 		if (DetectCollisionWithEnemy())
 			player_.is_dead_ = is_end_ = true;
 	}
+	UpdateScore();
 }
 
 void World::SpawnEnemy()
@@ -89,6 +91,8 @@ void World::MakeSnapshot()
 	header.is_end_ = is_end_;
 	header.enemy_number_ = enemies_.size();
 	header.obstacle_number_ = obstacles_.size();
+	header.current_score_ = current_score_;
+	header.highest_score_ = highest_score_;
 	
 	unsigned int player_area_size, enemies_area_size, obstacles_area_size;
 	player_area_size = sizeof(Player);
@@ -175,4 +179,13 @@ bool World::DetectCollisionWithEnemy()
 		if (player_ == enemy)
 			return true;
 	return false;
+}
+
+void World::UpdateScore()
+{
+	if (player_.pos.y > current_score_) {
+		current_score_ = player_.pos.y;
+		if (current_score_ > highest_score_)
+			highest_score_ = current_score_;
+	}
 }

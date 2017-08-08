@@ -58,6 +58,8 @@ struct SnapshotHeader
 	bool is_end_;
 	unsigned short enemy_number_;
 	unsigned short obstacle_number_;
+	unsigned short current_score_;
+	unsigned short highest_score_;
 };
 struct Snapshot
 {
@@ -68,7 +70,7 @@ struct Snapshot
 class World
 {
 public:
-	World() : ips_(1), snapshot_storage_size_(1){ random_.seed(time(NULL)); };
+	World() : ips_(1), snapshot_storage_size_(1), highest_score_(0) { random_.seed(time(NULL)); };
 	~World() {};
 	void Init();
 	void SetMapSize(unsigned short width, unsigned short height);
@@ -94,6 +96,8 @@ private:
 	unsigned int snapshot_storage_size_;
 	std::deque<Snapshot> snapshots_;
 	std::queue<unsigned short> enemy_id_queue_;
+	unsigned short current_score_;
+	unsigned short highest_score_;
 
 	void ProcessEnemies();
 	void DetectCollision();
@@ -101,4 +105,5 @@ private:
 	bool DetectCollisionWithBoundary();
 	bool DetectCollisionWithObstacle();
 	bool DetectCollisionWithEnemy();
+	void UpdateScore();
 };
