@@ -35,10 +35,10 @@ void World::ProcessCommand(Command command)
 	case Command::NONE:
 		break;
 	case Command::UP:
-		player_.pos.y += 1 / (float)ips_;
+		player_.pos.y += 1 / ips_;
 		break;
 	case Command::DOWN:
-		player_.pos.y -= 1 / (float)ips_;
+		player_.pos.y -= 1 / ips_;
 		break;
 	case Command::LEFT:
 		player_.pos.x -= 1 / ips_;

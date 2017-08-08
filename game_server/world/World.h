@@ -85,7 +85,7 @@ public:
 
 private:
 	bool is_end_;
-	unsigned short ips_;
+	float ips_;
 	Position boundary_;
 	Player player_;
 	std::vector<Enemy> enemies_;
