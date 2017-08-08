@@ -41,15 +41,7 @@ void broad_cast(Snapshot& snapshot)
 {
     mtx_sessions.lock();
     // bool + ushort * 2 == 5
-    core::udp::Packet p(snapshot.header_.total_size_, 0);
-
-    std::cout << "enemy_number_    : " <<
-        snapshot.header_.enemy_number_ << std::endl;
-    std::cout << "obstacle_number_ : " <<
-        snapshot.header_.obstacle_number_ << std::endl;
-    std::cout << "total_size_      : " <<
-        snapshot.header_.total_size_ << std::endl;
-
+    core::udp::Packet p(snapshot.header_.total_size_, 1);
     char* packet = const_cast<char*>(p.Data());
 
     memcpy(packet, (char*)&snapshot + 2, 1);
@@ -78,15 +70,14 @@ void broad_cast_task()
 		for (int i = 0; i < IPS; ++i) {
 			world.ProcessCommand(static_cast<Command>(command));
 			world.MakeSnapshot();
-			//broad_cast(world.GetSnapshot(0));
+			broad_cast(world.GetSnapshot(0));
 		}
         curr = std::chrono::high_resolution_clock::now();
-        std::cout << "Command : " << command << std::endl;
-        world.Print();
         int dt = ((std::chrono::duration<double, std::milli>)(curr - last)).count();
         Sleep(1000 - dt);
-    }
+    } 
 }
+
 int main()
 {
     if (!init_wsa()) {
