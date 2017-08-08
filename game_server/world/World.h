@@ -8,7 +8,9 @@
 #define MIN_MAP_WIDTH 16
 #define MIN_MAP_HEIGHT 16
 #define MAX_ENEMY_VELOCITY 3
+#define MAX_ENEMY_COUNT 1000
 
+#pragma pack(push, 1)
 enum class Command : unsigned short
 {
 	NONE, UP, DOWN, LEFT, RIGHT
@@ -59,6 +61,7 @@ struct Snapshot
 	SnapshotHeader header_;
 	std::shared_ptr<std::vector<char>> data_;
 };
+#pragma pack(pop)
 class World
 {
 public:

@@ -56,16 +56,19 @@ void World::ProcessCommand(Command command)
 
 void World::SpawnEnemy()
 {
-	if (!(random_() % 2)) {
-		++current_object_id_;
-		Enemy new_enemy;
-		new_enemy.object_id_ = current_object_id_;
-		new_enemy.velocity_ = random_() % (MAX_ENEMY_VELOCITY - 1);
-		++new_enemy.velocity_;
-		new_enemy.direction_ = static_cast<Direction>(random_() % 2);
-		new_enemy.pos.x = new_enemy.direction_ == Direction::RIGHT ? 0 : boundary_.x;
-		new_enemy.pos.y = random_() % static_cast<unsigned int>(boundary_.y);
-		enemies_.push_back(new_enemy);
+	if (enemies_.size() < MAX_ENEMY_COUNT) {
+		if (!(random_() % 2)) {
+			std::cout << "Enemy Spawned!\n";
+			++current_object_id_;
+			Enemy new_enemy;
+			new_enemy.object_id_ = current_object_id_;
+			new_enemy.velocity_ = random_() % (MAX_ENEMY_VELOCITY - 1);
+			++new_enemy.velocity_;
+			new_enemy.direction_ = static_cast<Direction>(random_() % 2);
+			new_enemy.pos.x = new_enemy.direction_ == Direction::RIGHT ? 0 : boundary_.x;
+			new_enemy.pos.y = random_() % static_cast<unsigned int>(boundary_.y);
+			enemies_.push_back(new_enemy);
+		}
 	}
 }
 
