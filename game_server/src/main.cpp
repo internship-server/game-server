@@ -16,14 +16,18 @@
 #define IPS 4
 #define INTERVAL 1000/IPS
 
-#define CHAT_SERVER_IP "10.1.5.30"
+#define CHAT_SERVER_IP "127.0.0.1"
 #define CHAT_SERVER_PORT 55151
 
 std::mutex mtx_sessions;
 std::vector<core::udp::Session*> sessions;
+
+std::mutex mtx_command;
+
 World world;
 
 uint8_t command;
+bool is_command_changed;
 
 bool init_wsa()
 {
@@ -64,15 +68,17 @@ void broad_cast(Snapshot& snapshot)
 
 void broad_cast_task()
 {
-    std::chrono::high_resolution_clock::time_point last;
-    std::chrono::high_resolution_clock::time_point curr;
-
-    last = std::chrono::high_resolution_clock::now();
     while (true) {
-        std::cout << (int)command << std::endl;
+        mtx_command.lock();
+        uint8_t _command = is_command_changed ? command : 0;
+        is_command_changed = false;
+        mtx_command.unlock();
+
+        std::cout << (int)_command << std::endl;
         world.SpawnEnemy();
+
         for (int i = 0; i < IPS; ++i) {
-            world.ProcessCommand(static_cast<Command>(command));
+            world.ProcessCommand(static_cast<Command>(_command));
             world.MakeSnapshot();
             broad_cast(world.GetSnapshot(0));
             Sleep(INTERVAL);
@@ -81,10 +87,7 @@ void broad_cast_task()
                 std::cout << "World is End.\n";
                 break;
             }
-            
         }
-        curr = std::chrono::high_resolution_clock::now();
-        int dt = ((std::chrono::duration<double, std::milli>)(curr - last)).count();
     }
 }
 
@@ -97,7 +100,7 @@ int main()
 
     core::udp::Server server(4000, 1);
 
-    world.SetMapSize(8, 8);
+    world.SetMapSize(13, 25);
     world.SetSnapshotStorageSize(16);
 	world.SetIps(IPS);
     world.Init();
@@ -137,8 +140,10 @@ int main()
 
         recv(socket, reinterpret_cast<char*>(&_command),
             sizeof(_command), 0);
-
+        mtx_command.lock();
         command = _command;
+        is_command_changed = true;
+        mtx_command.unlock();
         std::cout << "Received command : " << _command << std::endl;
         Sleep(1000);
     }
