@@ -11,6 +11,7 @@
 #define MAX_ENEMY_VELOCITY 3
 #define MAX_ENEMY_COUNT 300
 #define EXPECTED_ERROR 0.05
+#define OBJECT_RADIUS 0.4
 
 #pragma pack(push, 1)
 enum class Command : unsigned short
@@ -26,11 +27,6 @@ struct Object
 {
 	unsigned short object_id_;
 	Position pos;
-	friend bool operator==(const Object& l, const Object& r)
-	{
-		return (l.pos.x - EXPECTED_ERROR <= r.pos.x  && r.pos.x <= l.pos.x + EXPECTED_ERROR) && 
-			(l.pos.y - EXPECTED_ERROR <= r.pos.y && r.pos.y <= l.pos.y + EXPECTED_ERROR);
-	}
 };
 struct Player : public Object
 {
@@ -67,6 +63,7 @@ struct Snapshot
 	std::shared_ptr<std::vector<char>> data_;
 };
 #pragma pack(pop)
+bool IsCollision(Object &a, Object &b);
 class World
 {
 public:
