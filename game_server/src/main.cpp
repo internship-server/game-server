@@ -16,9 +16,14 @@
 #define IPS 4
 #define INTERVAL 1000/IPS
 
+#define CHAT_SERVER_IP "10.1.5.30"
+#define CHAT_SERVER_PORT 55151
+
 std::mutex mtx_sessions;
 std::vector<core::udp::Session*> sessions;
 World world;
+
+uint8_t command;
 
 bool init_wsa()
 {
@@ -64,21 +69,22 @@ void broad_cast_task()
 
     last = std::chrono::high_resolution_clock::now();
     while (true) {
-        while (!world.IsEnd()) {
-            last = std::chrono::high_resolution_clock::now();
-            unsigned int command = rand() % 5;
-            std::cout << command << std::endl;
-            world.SpawnEnemy();
-            for (int i = 0; i < IPS; ++i) {
-                world.ProcessCommand(static_cast<Command>(command));
-                world.MakeSnapshot();
-                broad_cast(world.GetSnapshot(0));
-                Sleep(INTERVAL);
+        std::cout << (int)command << std::endl;
+        world.SpawnEnemy();
+        for (int i = 0; i < IPS; ++i) {
+            world.ProcessCommand(static_cast<Command>(command));
+            world.MakeSnapshot();
+            broad_cast(world.GetSnapshot(0));
+            Sleep(INTERVAL);
+            if (world.IsEnd()) {
+                world.Init();
+                std::cout << "World is End.\n";
+                break;
             }
-            curr = std::chrono::high_resolution_clock::now();
-            int dt = ((std::chrono::duration<double, std::milli>)(curr - last)).count();
+            
         }
-        world.Init();
+        curr = std::chrono::high_resolution_clock::now();
+        int dt = ((std::chrono::duration<double, std::milli>)(curr - last)).count();
     }
 }
 
@@ -101,10 +107,41 @@ int main()
 
     server.RunNonBlock();
 
+    
+    // Communicate with chat server
+    SOCKET socket = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    sockaddr_in chat_server_addr;
+    
+    memset(&chat_server_addr, 0, sizeof(chat_server_addr));
+    
+    chat_server_addr.sin_family = AF_INET;
+    chat_server_addr.sin_port = htons(CHAT_SERVER_PORT);
+    InetPtonA(AF_INET, CHAT_SERVER_IP, &chat_server_addr.sin_addr);
+
+    int ret = ::connect(socket,
+        (sockaddr*)&chat_server_addr, sizeof(chat_server_addr));
+    std::cout << WSAGetLastError() << std::endl;
+
+    if (ret != 0) {
+        WSACleanup();
+        std::cout << "connection failed.\n";
+        return 1;
+    }
+    std::cout << "connection successed.\n";
+
     std::thread broad_cast_thread([]() { broad_cast_task(); });
 
-    // Communicate with chat server
-    while (1);
+    while (1)
+    {
+        uint8_t _command;
+
+        recv(socket, reinterpret_cast<char*>(&_command),
+            sizeof(_command), 0);
+
+        command = _command;
+        std::cout << "Received command : " << _command << std::endl;
+        Sleep(1000);
+    }
 
     return 0;
 }
