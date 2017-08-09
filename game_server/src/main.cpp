@@ -63,22 +63,23 @@ void broad_cast_task()
     std::chrono::high_resolution_clock::time_point curr;
 
     last = std::chrono::high_resolution_clock::now();
-
     while (true) {
-        last = std::chrono::high_resolution_clock::now();
-        unsigned int command = rand() % 5;
-        std::cout << command << std::endl;
-        world.SpawnEnemy();
-		for (int i = 0; i < IPS; ++i) {
-			world.ProcessCommand(static_cast<Command>(command));
-			world.MakeSnapshot();
-			broad_cast(world.GetSnapshot(0));
-            Sleep(INTERVAL);
-		}
-        curr = std::chrono::high_resolution_clock::now();
-        int dt = ((std::chrono::duration<double, std::milli>)(curr - last)).count();
-        Sleep(1500 - dt);
-    } 
+        while (!world.IsEnd()) {
+            last = std::chrono::high_resolution_clock::now();
+            unsigned int command = rand() % 5;
+            std::cout << command << std::endl;
+            world.SpawnEnemy();
+            for (int i = 0; i < IPS; ++i) {
+                world.ProcessCommand(static_cast<Command>(command));
+                world.MakeSnapshot();
+                broad_cast(world.GetSnapshot(0));
+                Sleep(INTERVAL);
+            }
+            curr = std::chrono::high_resolution_clock::now();
+            int dt = ((std::chrono::duration<double, std::milli>)(curr - last)).count();
+        }
+        world.Init();
+    }
 }
 
 int main()
