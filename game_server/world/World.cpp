@@ -1,5 +1,6 @@
 #include "World.h"
 #include <iostream>
+#include <math.h>
 
 void World::Init()
 {
@@ -168,7 +169,7 @@ bool World::DetectCollisionWithBoundary()
 bool World::DetectCollisionWithObstacle()
 {
 	for (Obstacle &obstacle : obstacles_)
-		if (player_ == obstacle)
+		if (IsCollision(player_, obstacle))
 			return true;
 	return false;
 }
@@ -176,7 +177,7 @@ bool World::DetectCollisionWithObstacle()
 bool World::DetectCollisionWithEnemy()
 {
 	for (Enemy &enemy : enemies_)
-		if (player_ == enemy)
+		if (IsCollision(player_, enemy))
 			return true;
 	return false;
 }
@@ -188,4 +189,11 @@ void World::UpdateScore()
 		if (current_score_ > highest_score_)
 			highest_score_ = current_score_;
 	}
+}
+
+bool IsCollision(Object & a, Object & b)
+{
+	if (abs(a.pos.x - b.pos.x) <= 2 * OBJECT_RADIUS && abs(a.pos.y - b.pos.y) <= 2 * OBJECT_RADIUS)
+		return true;
+	return false;
 }
