@@ -75,6 +75,7 @@ void broad_cast_task()
 			broad_cast(world.GetSnapshot(0));
             Sleep(INTERVAL);
 		}
+		world.Print();
         curr = std::chrono::high_resolution_clock::now();
         int dt = ((std::chrono::duration<double, std::milli>)(curr - last)).count();
         Sleep(1500 - dt);
@@ -90,7 +91,7 @@ int main()
 
     core::udp::Server server(4000, 1);
 
-    world.SetMapSize(8, 8);
+    world.SetMapSize(16, 32);
     world.SetSnapshotStorageSize(16);
 	world.SetIps(IPS);
     world.Init();

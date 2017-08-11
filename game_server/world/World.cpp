@@ -68,14 +68,20 @@ void World::SpawnEnemy()
 	if (enemies_.size() < MAX_ENEMY_COUNT) {
 		if (!(random_() % 2)) {
 			Enemy new_enemy;
-			new_enemy.velocity_ = random_() % (MAX_ENEMY_VELOCITY - 1);
-			++new_enemy.velocity_;
-			new_enemy.direction_ = static_cast<Direction>(random_() % 2);
-			new_enemy.pos.x = new_enemy.direction_ == Direction::RIGHT ? 0 : boundary_.x;
-			new_enemy.pos.y = random_() % static_cast<unsigned int>(boundary_.y);
-			new_enemy.object_id_ = enemy_id_queue_.front();
-			enemy_id_queue_.pop();
-			enemies_.push_back(new_enemy);
+			new_enemy.pos.y = (random_() % (2 * ENEMY_SPAWN_AREA)) + (player_.pos.y - ENEMY_SPAWN_AREA);
+			if (0 < new_enemy.pos.y && new_enemy.pos.y < boundary_.y) {
+				new_enemy.velocity_ = random_() % (MAX_ENEMY_VELOCITY - 1);
+				++new_enemy.velocity_;
+				new_enemy.direction_ = static_cast<Direction>(random_() % 2);
+				new_enemy.pos.x = new_enemy.direction_ == Direction::RIGHT ? 0 : boundary_.x;
+
+				new_enemy.object_id_ = enemy_id_queue_.front();
+				enemy_id_queue_.pop();
+				enemies_.push_back(new_enemy);
+			}
+			else {
+				SpawnEnemy();
+			}
 		}
 	}
 }

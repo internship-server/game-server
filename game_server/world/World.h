@@ -12,6 +12,7 @@
 #define MAX_ENEMY_COUNT 300
 #define EXPECTED_ERROR 0.05
 #define OBJECT_RADIUS 0.4
+#define ENEMY_SPAWN_AREA 16
 
 #pragma pack(push, 1)
 enum class Command : unsigned short
