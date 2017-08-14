@@ -38,7 +38,7 @@ bool init_wsa()
 void packet_handler(core::udp::Session*, core::udp::Packet&) { } // ignore packet
 
 // how about tls?
-void accpet_handler(core::udp::Session* session)
+void accept_handler(core::udp::Session* session)
 {
     mtx_sessions.lock();
     std::cout << "Client accepted\n";
@@ -46,11 +46,11 @@ void accpet_handler(core::udp::Session* session)
     mtx_sessions.unlock();
 }
 
-void broad_cast(Snapshot& snapshot)
+void broad_cast(Snapshot& snapshot, uint8_t command)
 {
     mtx_sessions.lock();
     // bool + ushort * 2 == 5
-    core::udp::Packet p(snapshot.header_.total_size_ + 9, 1);
+    core::udp::Packet p(snapshot.header_.total_size_ + 9, command);
     char* packet = const_cast<char*>(p.Data());
 
     memcpy(packet, (char*)&snapshot + 2, 1);
@@ -80,7 +80,7 @@ void broad_cast_task()
         for (int i = 0; i < IPS; ++i) {
             world.ProcessCommand(static_cast<Command>(_command));
             world.MakeSnapshot();
-            broad_cast(world.GetSnapshot(0));
+            broad_cast(world.GetSnapshot(0), command);
             Sleep(INTERVAL);
             if (world.IsEnd()) {
                 world.Init();
@@ -105,12 +105,11 @@ int main()
 	world.SetIps(IPS);
     world.Init();
 
-    server.SetAcceptHandler(&accpet_handler);
+    server.SetAcceptHandler(&accept_handler);
     server.SetPacketHandler(&packet_handler);
 
     server.RunNonBlock();
 
-    
     // Communicate with chat server
     SOCKET socket = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     sockaddr_in chat_server_addr;
