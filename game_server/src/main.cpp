@@ -49,6 +49,8 @@ void accept_handler(core::udp::Session* session)
 void broad_cast(Snapshot& snapshot, uint8_t command)
 {
     mtx_sessions.lock();
+    std::cout << (float)((Player*)snapshot.data_.get()->data())->pos.x <<
+        ", " << (float)((Player*)snapshot.data_.get()->data())->pos.y << std::endl;
     // bool + ushort * 2 == 5
     core::udp::Packet p(snapshot.header_.total_size_ + 9, command);
     char* packet = const_cast<char*>(p.Data());
@@ -73,6 +75,7 @@ void broad_cast_task()
         uint8_t _command = is_command_changed ? command : 0;
         is_command_changed = false;
         mtx_command.unlock();
+        char a = 0;
 
         std::cout << (int)_command << std::endl;
         world.SpawnEnemy();
@@ -80,7 +83,7 @@ void broad_cast_task()
         for (int i = 0; i < IPS; ++i) {
             world.ProcessCommand(static_cast<Command>(_command));
             world.MakeSnapshot();
-            broad_cast(world.GetSnapshot(0), command);
+            broad_cast(world.GetSnapshot(0), _command);
             Sleep(INTERVAL);
             if (world.IsEnd()) {
                 world.Init();
