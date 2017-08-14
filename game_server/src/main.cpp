@@ -41,16 +41,19 @@ void packet_handler(core::udp::Session*, core::udp::Packet&) { } // ignore packe
 void accept_handler(core::udp::Session* session)
 {
     mtx_sessions.lock();
-    std::cout << "Client accepted\n";
+    std::cout << "Client accepted.\n";
     sessions.push_back(session);
     mtx_sessions.unlock();
+}
+
+void disconnect_handler(core::udp::Session* session)
+{
+    std::cout << "Client disconnected.\n";
 }
 
 void broad_cast(Snapshot& snapshot, uint8_t command)
 {
     mtx_sessions.lock();
-    std::cout << (float)((Player*)snapshot.data_.get()->data())->pos.x <<
-        ", " << (float)((Player*)snapshot.data_.get()->data())->pos.y << std::endl;
     // bool + ushort * 2 == 5
     core::udp::Packet p(snapshot.header_.total_size_ + 9, command);
     char* packet = const_cast<char*>(p.Data());
@@ -98,7 +101,7 @@ int main()
 {
     if (!init_wsa()) {
         std::cout << "init_wsa() failed.\n";
-        return 1;
+        return -1;
     }
 
     core::udp::Server server(4000, 1);
@@ -109,9 +112,12 @@ int main()
     world.Init();
 
     server.SetAcceptHandler(&accept_handler);
+    server.SetDisconnectHandler(&disconnect_handler);
     server.SetPacketHandler(&packet_handler);
-
-    server.RunNonBlock();
+    if (!server.RunNonBlock()) {
+        std::cout << "Server run failed.\n";
+        return -1;
+    }
 
     // Communicate with chat server
     SOCKET socket = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
