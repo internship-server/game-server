@@ -4,8 +4,10 @@
 // don't want to be bothered with OOP 
 //
 
-#include <iostream>
 #define _WINSOCKAPI_
+
+#include <iostream>
+
 #include <Windows.h>
 #include <WinSock2.h>
 #include <WS2tcpip.h>
@@ -16,7 +18,7 @@
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "udp_server.lib")
 
-static const int num_client = 100;
+static const int num_client = 2500;
 SOCKET sockets[num_client];
 
 struct connect_packet {
@@ -70,8 +72,9 @@ int main()
         ::recv(sockets[i], (char*)&packet, sizeof(packet), 0);
         packet.type = -3;
         ::send(sockets[i], (const char*)&packet, sizeof(packet), 0);
+        std::cout << i << std::endl;
     }
-
+    std::cout << "@@";
     std::thread([&]() {
         while (true) {
             std::chrono::high_resolution_clock::time_point
@@ -82,16 +85,28 @@ int main()
             std::chrono::high_resolution_clock::time_point
                 curr(std::chrono::high_resolution_clock::now());
             int dt = std::chrono::duration<double, std::milli>(curr - last).count();
-            if (dt > 1000) {
+            if (dt > 10000) {
                 std::cout << "too late for heartbeat..\n";
-                break;
+                dt = 10000;
+                //break;
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(dt));
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10000 - dt));
         }
     }).detach();
 
     // check packet interval
-    while (1);
+    char buf[6000];
+    while (true) {
+        std::chrono::high_resolution_clock::time_point
+            last(std::chrono::high_resolution_clock::now());
+        ::recv(sockets[0], buf, sizeof(buf), 0);
+        std::chrono::high_resolution_clock::time_point
+            curr(std::chrono::high_resolution_clock::now());
+        std::cout << "interval : " <<
+            std::chrono::duration<double, std::milli>(curr - last).count();
+        std::cout << std::endl;
+    }
 
     return 0;
 }

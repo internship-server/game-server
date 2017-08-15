@@ -6,6 +6,7 @@
 #include <chrono>
 #include <thread>
 #include <vector>
+#include <unordered_set>
 
 #include "World.h"
 #include "udp_server/src/server.hpp"
@@ -19,12 +20,14 @@
 #define CHAT_SERVER_IP "127.0.0.1"
 #define CHAT_SERVER_PORT 55151
 
-std::mutex mtx_sessions;
-std::vector<core::udp::Session*> sessions;
+#define NUM_BTHREAD 2
 
+std::mutex mtx_sessions[NUM_BTHREAD];
+std::unordered_set<core::udp::Session*> sessions[NUM_BTHREAD];
 std::mutex mtx_command;
 
 World world;
+core::udp::Packet p(5150, 0);
 
 uint8_t command;
 bool is_command_changed;
@@ -40,22 +43,33 @@ void packet_handler(core::udp::Session*, core::udp::Packet&) { } // ignore packe
 // how about tls?
 void accept_handler(core::udp::Session* session)
 {
-    mtx_sessions.lock();
-    std::cout << "Client accepted.\n";
-    sessions.push_back(session);
-    mtx_sessions.unlock();
+    static unsigned long long counter = -1;
+    unsigned long long idx = InterlockedIncrement(&counter) % NUM_BTHREAD;
+    mtx_sessions[idx].lock();
+//    std::cout << "Client accepted" << idx << " " << sessions[idx].size() << std::endl;
+    sessions[idx].insert(session);
+    session->Data() = new unsigned long long(idx);
+    mtx_sessions[idx].unlock();
 }
 
 void disconnect_handler(core::udp::Session* session)
 {
+    /*
     std::cout << "Client disconnected.\n";
+    if (session->Data() == nullptr) return;
+    unsigned long long idx = *(unsigned long long*)session->Data();
+    mtx_sessions[idx].lock();
+    sessions[idx].erase(session);
+    mtx_sessions[idx].unlock();
+    */
 }
 
-void broad_cast(Snapshot& snapshot, uint8_t command)
+void broadcast(Snapshot& snapshot, uint8_t command)
 {
-    mtx_sessions.lock();
     // bool + ushort * 2 == 5
-    core::udp::Packet p(snapshot.header_.total_size_ + 9, command);
+    p.SetSize(snapshot.header_.total_size_ + 9);
+    p.SetType(command);
+
     char* packet = const_cast<char*>(p.Data());
 
     memcpy(packet, (char*)&snapshot + 2, 1);
@@ -65,13 +79,20 @@ void broad_cast(Snapshot& snapshot, uint8_t command)
     memcpy(packet + 7, (char*)&snapshot + 9, 2);
     memcpy(packet + 9, snapshot.data_->data(), snapshot.header_.total_size_);
 
-    for (core::udp::Session* session : sessions) {
-        session->Send(p);
+    volatile unsigned long long counter = NUM_BTHREAD;
+    for (int i = 0; i < NUM_BTHREAD; i++) {
+        std::thread([i,&counter]() mutable {
+            mtx_sessions[i].lock();
+            for (core::udp::Session* session : sessions[i]) {
+                session->Send(p);
+            }
+            mtx_sessions[i].unlock();
+            InterlockedDecrement(&counter);
+       }).detach();
     }
-    mtx_sessions.unlock();
 }
 
-void broad_cast_task()
+void broadcast_task()
 {
     while (true) {
         mtx_command.lock();
@@ -80,14 +101,19 @@ void broad_cast_task()
         mtx_command.unlock();
         char a = 0;
 
-        std::cout << (int)_command << std::endl;
         world.SpawnEnemy();
 
         for (int i = 0; i < IPS; ++i) {
             world.ProcessCommand(static_cast<Command>(_command));
             world.MakeSnapshot();
-            broad_cast(world.GetSnapshot(0), _command);
-            Sleep(INTERVAL);
+            std::chrono::high_resolution_clock::time_point
+                last(std::chrono::high_resolution_clock::now());
+            broadcast(world.GetSnapshot(0), _command);
+            std::chrono::high_resolution_clock::time_point
+                curr(std::chrono::high_resolution_clock::now());
+            int dt = std::chrono::duration<double, std::milli>(curr - last).count();
+            dt = dt < INTERVAL ? dt : INTERVAL;
+            Sleep(INTERVAL - dt);
             if (world.IsEnd()) {
                 world.Init();
                 std::cout << "World is End.\n";
@@ -104,7 +130,7 @@ int main()
         return -1;
     }
 
-    core::udp::Server server(4000, 1);
+    core::udp::Server server(4000, 2);
 
     world.SetMapSize(13, 25);
     world.SetSnapshotStorageSize(16);
@@ -140,7 +166,7 @@ int main()
     }
     std::cout << "connection successed.\n";
 
-    std::thread broad_cast_thread([]() { broad_cast_task(); });
+    std::thread broad_cast_thread([]() { broadcast_task(); });
 
     while (1)
     {
