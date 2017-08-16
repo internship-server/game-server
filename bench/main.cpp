@@ -18,7 +18,9 @@
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "udp_server.lib")
 
-static const int num_client = 2500;
+#define NUM_THREAD 4
+
+static const int num_client = 20000;
 SOCKET sockets[num_client];
 
 struct connect_packet {
@@ -45,7 +47,6 @@ int main()
         return -1;
     }
 
-    connect_packet packet;
     heartbeat _heartbeat;
     
     _heartbeat.size = 0;
@@ -53,28 +54,50 @@ int main()
 
     core::udp::Endpoint server_endpoint(4000, "127.0.0.1");
 
+    int opt = 1;
     for (int i = 0; i < num_client; i++) {
-        core::udp::Endpoint endpoint(55150 + i, "127.0.0.1");
+        core::udp::Endpoint endpoint(15150 + i, "127.0.0.1");
         sockets[i] = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-        ::bind(sockets[i], (const sockaddr*)&endpoint.Addr(),
+        ::setsockopt(sockets[i], SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
+        int ret = ::bind(sockets[i], (const sockaddr*)&endpoint.Addr(),
             sizeof(endpoint.Addr()));
+        if (ret != 0) {
+            std::cout << ret << std::endl;
+            std::cout << WSAGetLastError() << std::endl;
+        }
         ::connect(sockets[i], (const sockaddr*)&server_endpoint.Addr(),
             sizeof(server_endpoint.Addr()));
     }
-
-    packet.size = 2;
-    packet.type = -1;
-    packet.seq = 0;
-
-    for (int i = 0; i < num_client; i++) {
-        packet.type = -1;
-        ::send(sockets[i], (const char*)&packet, sizeof(packet), 0);
-        ::recv(sockets[i], (char*)&packet, sizeof(packet), 0);
-        packet.type = -3;
-        ::send(sockets[i], (const char*)&packet, sizeof(packet), 0);
-        std::cout << i << std::endl;
+    std::cerr << "join start\n";
+    std::chrono::high_resolution_clock::time_point
+        last(std::chrono::high_resolution_clock::now());
+    std::thread threads[NUM_THREAD];
+    
+    for (int tid = 0; tid < NUM_THREAD; tid++) {
+        threads[tid] = std::thread([tid]() {
+            connect_packet packet;
+            packet.size = 2;
+            packet.type = -1;
+            packet.seq = 0;
+            for (int i = tid*(num_client / NUM_THREAD);
+                i < (tid + 1)*(num_client / NUM_THREAD); i++) {
+                packet.type = -1;
+                packet.seq = i;
+                ::send(sockets[i], (const char*)&packet, sizeof(packet), 0);
+                ::recv(sockets[i], (char*)&packet, sizeof(packet), 0);
+                packet.type = -3;
+                ::send(sockets[i], (const char*)&packet, sizeof(packet), 0);
+            }
+        });
     }
-    std::cout << "@@";
+    
+    for (int tid = 0; tid < NUM_THREAD; tid++) threads[tid].join();
+
+    std::chrono::high_resolution_clock::time_point
+        curr(std::chrono::high_resolution_clock::now());
+    int dt = std::chrono::duration<double, std::milli>(curr - last).count();
+    std::cout << "join complete : " << dt << std::endl;
+
     std::thread([&]() {
         while (true) {
             std::chrono::high_resolution_clock::time_point
@@ -85,13 +108,12 @@ int main()
             std::chrono::high_resolution_clock::time_point
                 curr(std::chrono::high_resolution_clock::now());
             int dt = std::chrono::duration<double, std::milli>(curr - last).count();
-            if (dt > 10000) {
+            if (dt > 1000) {
                 std::cout << "too late for heartbeat..\n";
-                dt = 10000;
+                dt = 1000;
                 //break;
             }
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10000 - dt));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000 - dt));
         }
     }).detach();
 

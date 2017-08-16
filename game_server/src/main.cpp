@@ -20,7 +20,7 @@
 #define CHAT_SERVER_IP "127.0.0.1"
 #define CHAT_SERVER_PORT 55151
 
-#define NUM_BTHREAD 2
+#define NUM_BTHREAD 3
 
 std::mutex mtx_sessions[NUM_BTHREAD];
 std::unordered_set<core::udp::Session*> sessions[NUM_BTHREAD];
@@ -40,7 +40,6 @@ bool init_wsa()
 
 void packet_handler(core::udp::Session*, core::udp::Packet&) { } // ignore packet
 
-// how about tls?
 void accept_handler(core::udp::Session* session)
 {
     static unsigned long long counter = -1;
@@ -130,7 +129,7 @@ int main()
         return -1;
     }
 
-    core::udp::Server server(4000, 2);
+    core::udp::Server server(4000, 1);
 
     world.SetMapSize(13, 25);
     world.SetSnapshotStorageSize(16);
