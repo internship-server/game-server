@@ -20,7 +20,7 @@
 
 #define NUM_THREAD 4
 
-static const int num_client = 20000;
+static const int num_client = 16384;
 SOCKET sockets[num_client];
 
 struct connect_packet {
@@ -43,7 +43,7 @@ bool init_wsa()
 int main()
 {
     if (!init_wsa()) {
-        std::cout << "iniw_wsa() failed.\n";
+        std::cout << "init_wsa() failed.\n";
         return -1;
     }
 
@@ -95,7 +95,7 @@ int main()
 
     std::chrono::high_resolution_clock::time_point
         curr(std::chrono::high_resolution_clock::now());
-    int dt = std::chrono::duration<double, std::milli>(curr - last).count();
+    double dt = std::chrono::duration<double, std::milli>(curr - last).count();
     std::cout << "join complete : " << dt << std::endl;
 
     std::thread([&]() {
@@ -108,12 +108,12 @@ int main()
             std::chrono::high_resolution_clock::time_point
                 curr(std::chrono::high_resolution_clock::now());
             int dt = std::chrono::duration<double, std::milli>(curr - last).count();
-            if (dt > 1000) {
+            if (dt > 10000) {
                 std::cout << "too late for heartbeat..\n";
-                dt = 1000;
+                dt = 10000;
                 //break;
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000 - dt));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10000 - dt));
         }
     }).detach();
 

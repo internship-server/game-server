@@ -6,11 +6,6 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "game_server_minimal", "game_server_minimal\game_server_minimal.vcxproj", "{1D8C3B08-DBDD-476C-9BA8-7284B7153CCA}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "game_server", "game_server\game_server.vcxproj", "{D657B753-75F7-4601-A26D-B3D0CE81988E}"
-	ProjectSection(ProjectDependencies) = postProject
-		{891F64E1-267E-4A89-8E4B-5D8C4E49A226} = {891F64E1-267E-4A89-8E4B-5D8C4E49A226}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "udp_server", "game_server\server-core\core\udp_server\udp_server.vcxproj", "{891F64E1-267E-4A89-8E4B-5D8C4E49A226}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bench", "bench\bench.vcxproj", "{3002605D-DC23-42D5-AA53-FE6341206105}"
 EndProject
@@ -38,14 +33,6 @@ Global
 		{D657B753-75F7-4601-A26D-B3D0CE81988E}.Release|x64.Build.0 = Release|x64
 		{D657B753-75F7-4601-A26D-B3D0CE81988E}.Release|x86.ActiveCfg = Release|Win32
 		{D657B753-75F7-4601-A26D-B3D0CE81988E}.Release|x86.Build.0 = Release|Win32
-		{891F64E1-267E-4A89-8E4B-5D8C4E49A226}.Debug|x64.ActiveCfg = Debug|x64
-		{891F64E1-267E-4A89-8E4B-5D8C4E49A226}.Debug|x64.Build.0 = Debug|x64
-		{891F64E1-267E-4A89-8E4B-5D8C4E49A226}.Debug|x86.ActiveCfg = Debug|Win32
-		{891F64E1-267E-4A89-8E4B-5D8C4E49A226}.Debug|x86.Build.0 = Debug|Win32
-		{891F64E1-267E-4A89-8E4B-5D8C4E49A226}.Release|x64.ActiveCfg = Release|x64
-		{891F64E1-267E-4A89-8E4B-5D8C4E49A226}.Release|x64.Build.0 = Release|x64
-		{891F64E1-267E-4A89-8E4B-5D8C4E49A226}.Release|x86.ActiveCfg = Release|Win32
-		{891F64E1-267E-4A89-8E4B-5D8C4E49A226}.Release|x86.Build.0 = Release|Win32
 		{3002605D-DC23-42D5-AA53-FE6341206105}.Debug|x64.ActiveCfg = Debug|x64
 		{3002605D-DC23-42D5-AA53-FE6341206105}.Debug|x64.Build.0 = Debug|x64
 		{3002605D-DC23-42D5-AA53-FE6341206105}.Debug|x86.ActiveCfg = Debug|Win32

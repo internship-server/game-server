@@ -9,10 +9,12 @@
 #include <unordered_set>
 
 #include "World.h"
-#include "udp_server/src/server.hpp"
+#include "server.hpp"
+#include "ThreadPool.h"
 
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "udp_server.lib")
+#pragma comment(lib, "thread_manager.lib")
 
 #define IPS 4
 #define INTERVAL 1000/IPS
@@ -20,7 +22,7 @@
 #define CHAT_SERVER_IP "127.0.0.1"
 #define CHAT_SERVER_PORT 55151
 
-#define NUM_BTHREAD 3
+#define NUM_BTHREAD 1
 
 std::mutex mtx_sessions[NUM_BTHREAD];
 std::unordered_set<core::udp::Session*> sessions[NUM_BTHREAD];
@@ -28,6 +30,7 @@ std::mutex mtx_command;
 
 World world;
 core::udp::Packet p(5150, 0);
+core::ThreadPool thread_pool(NUM_BTHREAD);
 
 uint8_t command;
 bool is_command_changed;
@@ -45,7 +48,7 @@ void accept_handler(core::udp::Session* session)
     static unsigned long long counter = -1;
     unsigned long long idx = InterlockedIncrement(&counter) % NUM_BTHREAD;
     mtx_sessions[idx].lock();
-//    std::cout << "Client accepted" << idx << " " << sessions[idx].size() << std::endl;
+    std::cout << "Client accepted" << idx << " " << sessions[idx].size() << std::endl;
     sessions[idx].insert(session);
     session->Data() = new unsigned long long(idx);
     mtx_sessions[idx].unlock();
@@ -53,14 +56,12 @@ void accept_handler(core::udp::Session* session)
 
 void disconnect_handler(core::udp::Session* session)
 {
-    /*
     std::cout << "Client disconnected.\n";
     if (session->Data() == nullptr) return;
     unsigned long long idx = *(unsigned long long*)session->Data();
     mtx_sessions[idx].lock();
     sessions[idx].erase(session);
     mtx_sessions[idx].unlock();
-    */
 }
 
 void broadcast(Snapshot& snapshot, uint8_t command)
@@ -71,7 +72,7 @@ void broadcast(Snapshot& snapshot, uint8_t command)
 
     char* packet = const_cast<char*>(p.Data());
 
-    memcpy(packet, (char*)&snapshot + 2, 1);
+    memcpy(packet, (char*)&snapshot + 2, 2);
     memcpy(packet + 1, (char*)&snapshot + 3, 2);
     memcpy(packet + 3, (char*)&snapshot + 5, 2);
     memcpy(packet + 5, (char*)&snapshot + 7, 2);
@@ -80,6 +81,15 @@ void broadcast(Snapshot& snapshot, uint8_t command)
 
     volatile unsigned long long counter = NUM_BTHREAD;
     for (int i = 0; i < NUM_BTHREAD; i++) {
+        thread_pool.Enqueue([i, &counter]() mutable {
+            mtx_sessions[i].lock();
+            for (core::udp::Session* session : sessions[i]) {
+                session->Send(p);
+            }
+            mtx_sessions[i].unlock();
+            InterlockedDecrement(&counter);
+        });
+        /*
         std::thread([i,&counter]() mutable {
             mtx_sessions[i].lock();
             for (core::udp::Session* session : sessions[i]) {
@@ -88,11 +98,14 @@ void broadcast(Snapshot& snapshot, uint8_t command)
             mtx_sessions[i].unlock();
             InterlockedDecrement(&counter);
        }).detach();
+       */
     }
+    while (counter);
 }
 
 void broadcast_task()
 {
+    unsigned int cnt = 0;
     while (true) {
         mtx_command.lock();
         uint8_t _command = is_command_changed ? command : 0;
@@ -110,7 +123,7 @@ void broadcast_task()
             broadcast(world.GetSnapshot(0), _command);
             std::chrono::high_resolution_clock::time_point
                 curr(std::chrono::high_resolution_clock::now());
-            int dt = std::chrono::duration<double, std::milli>(curr - last).count();
+            double dt = std::chrono::duration<double, std::milli>(curr - last).count();
             dt = dt < INTERVAL ? dt : INTERVAL;
             Sleep(INTERVAL - dt);
             if (world.IsEnd()) {
@@ -163,10 +176,11 @@ int main()
         std::cout << "connection failed.\n";
         return 1;
     }
+    
     std::cout << "connection successed.\n";
 
     std::thread broad_cast_thread([]() { broadcast_task(); });
-
+    
     while (1)
     {
         uint8_t _command;
